@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using System.Linq;
 using UnityEngine;
 
 namespace ArchipelagoRandomizer
@@ -31,7 +32,7 @@ namespace ArchipelagoRandomizer
                         int key = nomaiTextData.ConditionBlock[j][k];
                         if (__instance._dictNomaiTextData.ContainsKey(key))
                         {
-                            var textLine = __instance._textLines[__instance._dictNomaiTextData[key].ID];
+                            var textLine = __instance._textLines.First(x => x.GetEntryID() == key);
                             APRandomizer.OWMLModConsole.WriteLine($"{__instance.gameObject.name} changing color for {textLine.gameObject.name}", OWML.Common.MessageType.Success);
                             CheckHintData hintData;
                             if (textLine.GetComponent<CheckHintData>() == null) hintData = textLine.gameObject.AddComponent<CheckHintData>();
@@ -59,10 +60,9 @@ namespace ArchipelagoRandomizer
         [HarmonyPrefix, HarmonyPatch(typeof(NomaiTextLine), nameof(NomaiTextLine.DetermineTextLineColor))]
         public static bool NomaiTextLine_DetermineTextLineColor_Prefix(NomaiText __instance, ref NomaiTextLine.VisualState state, ref Color __result)
         {
-            if (__instance.GetComponent<CheckHintData>() == null)
+            if (__instance.GetComponent<CheckHintData>() == null || state == NomaiTextLine.VisualState.TRANSLATED)
             {
-                __result = new(2f, 0, 0, 1);
-                return false;
+                return true;
             }
 
             __result = __instance.GetComponent<CheckHintData>().NomaiWallColor();
