@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using UnityEngine;
 
 namespace ArchipelagoRandomizer
 {
@@ -18,6 +19,31 @@ namespace ArchipelagoRandomizer
                 child._state = NomaiTextLine.VisualState.UNREAD;
             }
 
+            for (int i = 0; i < __instance._listDBConditions.Count; i++)
+            {
+                var nomaiTextData = __instance._listDBConditions[i];
+                if (string.IsNullOrEmpty(nomaiTextData.DatabaseID)) continue;
+                APRandomizer.OWMLModConsole.WriteLine($"{__instance.gameObject.name} log found: {nomaiTextData.DatabaseID}");
+                for (int j = 0; j < nomaiTextData.ConditionBlock.Length; j++)
+                {
+                    for (int k = 0; k < nomaiTextData.ConditionBlock[j].Length; k++)
+                    {
+                        int key = nomaiTextData.ConditionBlock[j][k];
+                        if (__instance._dictNomaiTextData.ContainsKey(key))
+                        {
+                            var textLine = __instance._textLines[__instance._dictNomaiTextData[key].ID];
+                            APRandomizer.OWMLModConsole.WriteLine($"{__instance.gameObject.name} changing color for {textLine.gameObject.name}", OWML.Common.MessageType.Success);
+                            CheckHintData hintData;
+                            if (textLine.GetComponent<CheckHintData>() == null) hintData = textLine.gameObject.AddComponent<CheckHintData>();
+                            else hintData = textLine.GetComponent<CheckHintData>();
+
+                            hintData.SetImportance(CheckImportance.Useful);
+                            hintData.CheckName = nomaiTextData.DatabaseID;
+                        }
+                    }
+                }
+            }
+
             // Ignore scrolls if they aren't socketed
             bool isScroll = __instance.transform.GetComponentInParent<ScrollItem>() != null;
             bool isSocketed = __instance.transform.GetComponentInParent<ScrollSocket>() != null;
@@ -27,6 +53,20 @@ namespace ArchipelagoRandomizer
             {
                 __instance.ShowImmediate();
             }
+        }
+
+
+        [HarmonyPrefix, HarmonyPatch(typeof(NomaiTextLine), nameof(NomaiTextLine.DetermineTextLineColor))]
+        public static bool NomaiTextLine_DetermineTextLineColor_Prefix(NomaiText __instance, ref NomaiTextLine.VisualState state, ref Color __result)
+        {
+            if (__instance.GetComponent<CheckHintData>() == null)
+            {
+                __result = new(2f, 0, 0, 1);
+                return false;
+            }
+
+            __result = __instance.GetComponent<CheckHintData>().NomaiWallColor();
+            return false;
         }
 
         // fixes for the text not becoming properly grey when read
