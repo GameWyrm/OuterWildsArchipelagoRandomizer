@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using System;
 using System.Linq;
 using UnityEngine;
 
@@ -9,6 +10,8 @@ namespace ArchipelagoRandomizer
     {
         public static bool AutoNomaiText;
         public static float TranslateTime = 0.2f;
+
+        public static Material ChildTextMat;
 
         // Auto-expand all Nomai text in the game as a Quality of Life feature
         [HarmonyPostfix, HarmonyPatch(typeof(NomaiWallText), nameof(NomaiWallText.LateInitialize))]
@@ -32,12 +35,19 @@ namespace ArchipelagoRandomizer
                         int key = nomaiTextData.ConditionBlock[j][k];
                         if (__instance._dictNomaiTextData.ContainsKey(key))
                         {
+                            bool isALog = Enum.TryParse<Location>("SLF__" + nomaiTextData.DatabaseID, out Location loc);
+                            if (!isALog) continue;
+
                             var textLine = __instance._textLines.First(x => x.GetEntryID() == key);
                             APRandomizer.OWMLModConsole.WriteLine($"{__instance.gameObject.name} changing color for {textLine.gameObject.name}", OWML.Common.MessageType.Success);
-                            CheckHintData hintData;
-                            if (textLine.GetComponent<CheckHintData>() == null) hintData = textLine.gameObject.AddComponent<CheckHintData>();
-                            else hintData = textLine.GetComponent<CheckHintData>();
 
+                            if (ChildTextMat == null) ChildTextMat = Locator.GetAstroObject(AstroObject.Name.CaveTwin).transform.Find("Sector_CaveTwin/Sector_SouthHemisphere/Sector_SouthUnderground/Sector_City/Interactables_City/Arc_CT_City_KidDirectionToFossil_1/Arc 1").GetComponent<Renderer>().material;
+
+                            textLine.GetComponent<Renderer>().material = ChildTextMat;
+
+                            CheckHintData hintData;
+
+                            hintData = textLine.gameObject.GetAddComponent<CheckHintData>();
                             hintData.SetImportance(CheckImportance.Useful);
                             hintData.CheckName = nomaiTextData.DatabaseID;
                         }
