@@ -2,7 +2,7 @@ using HarmonyLib;
 using System.Linq;
 using System;
 using UnityEngine;
-using System.Collections.Generic;
+using System.Collections;
 
 namespace ArchipelagoRandomizer
 {
@@ -210,6 +210,18 @@ namespace ArchipelagoRandomizer
         public static void ScrollItem_Awake_Postfix(ScrollItem __instance)
         {
             if (ColorNomaiText) __instance.gameObject.AddComponent<ScrollHintData>();
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(NomaiSharedWhiteboard), nameof(NomaiSharedWhiteboard.Awake))]
+        public static void NomaiSharedWhiteboard_Awake_Postfix(NomaiSharedWhiteboard __instance)
+        {
+            if (ColorNomaiText) __instance.gameObject.AddComponent<SharedStoneHintData>();
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(SharedStone), nameof(SharedStone.Awake))]
+        public static void SharedStone_Awake_Postfix(SharedStone __instance)
+        {
+            SharedStoneHintData.RegisterStone(__instance);
         }
     }
 }
